@@ -58,6 +58,20 @@ function App() {
     }
   };
 
+  const openInLineApp = () => {
+    const liffId = import.meta.env.VITE_LIFF_ID as string | undefined;
+    if (!liffId) return;
+    const liffUrl = `https://liff.line.me/${liffId}`;
+    // iOS Safari での確実性向上のため、明示的に location.href で遷移
+    window.location.href = liffUrl;
+    // 念のため、遷移できない環境向けのフォールバック
+    setTimeout(() => {
+      if (document.visibilityState === "visible") {
+        window.location.assign(liffUrl);
+      }
+    }, 800);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
       <div className="bg-white rounded-xl shadow p-6 w-full max-w-md text-center space-y-4">
@@ -74,12 +88,12 @@ function App() {
           ) : (
             <div className="space-y-2">
               <p className="text-gray-600 text-sm">LINEアプリで開くとログインできます。</p>
-              <a
-                href={`https://liff.line.me/${import.meta.env.VITE_LIFF_ID}`}
-                className="inline-block w-full py-3 rounded-md bg-green-500 hover:bg-green-600 text-white font-medium"
+              <button
+                onClick={openInLineApp}
+                className="w-full py-3 rounded-md bg-green-500 hover:bg-green-600 text-white font-medium"
               >
                 LINEアプリで開く
-              </a>
+              </button>
             </div>
           )
         )}
