@@ -1,20 +1,16 @@
 # stumpNFC.com
 
-## LINEログイン設定
+## Googleログイン設定（Google Identity Services）
 
-1. LINE Developers で LIFF アプリを作成し、LIFF ID を取得します。
-2. プロジェクト直下に `.env` を作成し、以下を設定します。
+1. Google Cloud Console で OAuth 同意画面を作成 → 公開
+2. 認証情報 → 「OAuth 2.0 クライアントID（Web）」作成
+   - 承認済みのJavaScript生成元: `http://localhost:5173`, `https://<本番ドメイン>`
+   - リダイレクトURIは不要（One Tap / Credential 回収方式）
+3. プロジェクト直下に `.env` を作成し、以下を設定
 
 ```
-VITE_LIFF_ID=あなたのLIFF_ID
-# 任意: リダイレクト先を固定したい場合に指定（未指定なら現URL）
-VITE_LIFF_REDIRECT_URI=https://あなたのドメイン/
-# 任意: LINEアプリ外で開いたとき、LIFF URLに自動遷移してLINEアプリを起動
-VITE_FORCE_OPEN_IN_LINE=true
+VITE_GOOGLE_CLIENT_ID=あなたのOAuthクライアントID.apps.googleusercontent.com
 ```
-
-3. 開発/本番URLを LIFF のエンドポイントURLやコールバックURLに登録してください。
-   - 例: `http://localhost:5173/` や デプロイ先のURL
 
 4. 起動
 
@@ -22,19 +18,7 @@ VITE_FORCE_OPEN_IN_LINE=true
 npm run dev
 ```
 
-トップページに「LINEでログイン」ボタンが表示され、未ログイン時は LIFF のログイン画面に遷移します。
-
-### 自動ログインについて
-
-本プロジェクトは未ログインの場合、ページ読み込み時に自動で `liff.login()` を実行します。
-
-- LIFF アプリのスコープに少なくとも `openid` と `profile` を設定
-- LIFF エンドポイントURLに、実際にアクセスするURL（本番/開発）を登録
-- 外部ブラウザからも開ける通常のウェブアプリ（LIFF v2）として設定
-- 必要に応じて `.env` に `VITE_LIFF_REDIRECT_URI` を指定
-- さらに“できるだけLINEアプリで開かせたい”場合は `VITE_FORCE_OPEN_IN_LINE=true` を設定
-  - ブラウザでアクセス→未ログイン→自動で `https://liff.line.me/<LIFF_ID>` に遷移→LINEアプリが起動
-  - 既にLINEアプリでログイン済みなら、アカウント選択なしでスムーズに進みやすい
+トップページに「Googleでログイン」ボタンと One Tap が表示されます。
 
 ## デプロイ（Vercel + GitHub Actions）
 
@@ -48,7 +32,7 @@ npm run dev
    - `VERCEL_PROJECT_ID`（当該プロジェクトID）
    - `VITE_LIFF_ID`／`VITE_LIFF_REDIRECT_URI`（任意）
 4. mainにプッシュすると `.github/workflows/deploy-vercel.yml` が自動で本番デプロイ
-5. デプロイURLを LINE Developers のLIFF「エンドポイントURL」に登録
+5. デプロイURLを Google Cloud の承認済みドメイン/生成元に追加
 
 補足
 - `vercel.json` は static build（Viteの `dist`）を公開する設定です。
