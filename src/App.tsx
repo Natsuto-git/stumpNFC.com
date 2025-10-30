@@ -5,6 +5,7 @@ declare const liff: any;
 function App() {
   const [isReady, setIsReady] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isInClient, setIsInClient] = useState(false);
   const [profileName, setProfileName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -17,6 +18,8 @@ function App() {
         }
         await liff.init({ liffId });
         setIsReady(true);
+        const inClient = typeof liff.isInClient === "function" ? liff.isInClient() : false;
+        setIsInClient(inClient);
         const loggedIn = liff.isLoggedIn();
         setIsLoggedIn(loggedIn);
         if (loggedIn) {
@@ -24,21 +27,13 @@ function App() {
           setProfileName(profile?.displayName ?? null);
           sessionStorage.removeItem("AUTO_LOGIN_TRIED");
         } else {
-          // 無限リロード防止: セッション内で一度だけ自動ログイン
+          // ブラウザ（LINEアプリ外）では一度だけLIFF URLへ遷移してLINEアプリを起動
           const tried = sessionStorage.getItem("AUTO_LOGIN_TRIED") === "1";
-          if (!tried) {
+          const forceOpenInLine = (import.meta.env.VITE_FORCE_OPEN_IN_LINE || "true").toString() === "true";
+          if (!inClient && forceOpenInLine && !tried) {
             sessionStorage.setItem("AUTO_LOGIN_TRIED", "1");
-
-            const forceOpenInLine = (import.meta.env.VITE_FORCE_OPEN_IN_LINE || "false").toString() === "true";
-            const isInClient = typeof liff.isInClient === "function" ? liff.isInClient() : false;
-
-            if (forceOpenInLine && !isInClient) {
-              const liffUrl = `https://liff.line.me/${liffId}`;
-              window.location.replace(liffUrl);
-            } else {
-              const redirectUri = import.meta.env.VITE_LIFF_REDIRECT_URI || window.location.href;
-              liff.login({ redirectUri });
-            }
+            const liffUrl = `https://liff.line.me/${liffId}`;
+            window.location.replace(liffUrl);
           }
         }
       } catch (e) {
@@ -68,8 +63,26 @@ function App() {
       <div className="bg-white rounded-xl shadow p-6 w-full max-w-md text-center space-y-4">
         <h1 className="text-xl font-semibold">LINE ログイン</h1>
         {!isReady && <p className="text-gray-500">初期化中...</p>}
-        {/* 自動ログインのため未ログイン時ボタンは基本的に表示しない */}
-        {isReady && !isLoggedIn && null}
+        {isReady && !isLoggedIn && (
+          isInClient ? (
+            <button
+              onClick={handleLogin}
+              className="w-full py-3 rounded-md bg-green-500 hover:bg-green-600 text-white font-medium"
+            >
+              LINEでログイン
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-gray-600 text-sm">LINEアプリで開くとログインできます。</p>
+              <a
+                href={`https://liff.line.me/${import.meta.env.VITE_LIFF_ID}`}
+                className="inline-block w-full py-3 rounded-md bg-green-500 hover:bg-green-600 text-white font-medium"
+              >
+                LINEアプリで開く
+              </a>
+            </div>
+          )
+        )}
         {isReady && isLoggedIn && (
           <div className="space-y-3">
             <p className="text-gray-700">ログイン中{profileName ? `：${profileName}` : ""}</p>
