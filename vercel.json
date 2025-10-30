@@ -5,8 +5,8 @@
   ],
   "framework": null,
   "cleanUrls": true,
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+  "routes": [
+    { "src": "/(.*)", "dest": "/index.html" }
   ],
   "env": {
     "VITE_LIFF_ID": "${VITE_LIFF_ID}",
