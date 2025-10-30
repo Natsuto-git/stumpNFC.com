@@ -31,4 +31,20 @@ npm run dev
 - 外部ブラウザからも開ける通常のウェブアプリ（LIFF v2）として設定
 - 必要に応じて `.env` に `VITE_LIFF_REDIRECT_URI` を指定
 
+## デプロイ（Vercel + GitHub Actions）
+
+1. Vercelでプロジェクト作成（GitHubの `Natsuto-git/stumpNFC.com` をImport）
+2. VercelのProject Settings → Environment Variables に以下を追加
+   - `VITE_LIFF_ID`（必須）
+   - `VITE_LIFF_REDIRECT_URI`（任意）
+3. GitHubリポジトリの Settings → Secrets and variables → Actions に追加
+   - `VERCEL_TOKEN`（VercelのPersonal Token）
+   - `VERCEL_ORG_ID`（VercelのOrganization ID）
+   - `VERCEL_PROJECT_ID`（当該プロジェクトID）
+   - `VITE_LIFF_ID`／`VITE_LIFF_REDIRECT_URI`（任意）
+4. mainにプッシュすると `.github/workflows/deploy-vercel.yml` が自動で本番デプロイ
+5. デプロイURLを LINE Developers のLIFF「エンドポイントURL」に登録
+
+補足: `vercel.json` は static build（Viteの `dist`）を公開する設定です。
+
 stumpNFC.com
