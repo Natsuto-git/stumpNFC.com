@@ -11,6 +11,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [profileName, setProfileName] = useState<string | null>(null);
   const oneTapTriedRef = useRef(false);
+  const tokenClientRef = useRef<any>(null);
 
   useEffect(() => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
@@ -32,6 +33,26 @@ function App() {
           },
           auto_select: false,
           cancel_on_tap_outside: true,
+        });
+
+        // OAuth 2.0 Token Client（iOS Safari 等でOne Tapが出ない時のフォールバック）
+        tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: "openid email profile",
+          callback: async (tokenResponse: any) => {
+            try {
+              const accessToken = tokenResponse?.access_token;
+              if (!accessToken) return;
+              const res = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
+                headers: { Authorization: `Bearer ${accessToken}` },
+              });
+              const user = await res.json();
+              setProfileName(user?.name || user?.email || null);
+              setIsLoggedIn(true);
+            } catch (e) {
+              console.error("userinfo 取得失敗", e);
+            }
+          },
         });
 
         // ボタンを描画（見た目はTailwindボタンも併置する）
@@ -75,6 +96,24 @@ function App() {
     setProfileName(null);
   };
 
+  const handleGoogleLogin = () => {
+    // One Tap を再提示（出ない場合はトークンフローにフォールバック）
+    let prompted = false;
+    try {
+      window.google?.accounts.id.prompt((notification: any) => {
+        // NotDisplayed or Skipped ならフォールバック
+        const reason = notification?.getNotDisplayedReason?.() || notification?.getSkippedReason?.();
+        if (reason) {
+          tokenClientRef.current?.requestAccessToken({ prompt: "consent" });
+        }
+      });
+      prompted = true;
+    } catch {}
+    if (!prompted) {
+      tokenClientRef.current?.requestAccessToken({ prompt: "consent" });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
       <div className="bg-white rounded-xl shadow p-6 w-full max-w-md text-center space-y-4">
@@ -84,7 +123,7 @@ function App() {
           <div className="space-y-3">
             <div id="g_id_signin"></div>
             <button
-              onClick={() => window.google?.accounts.id.prompt()}
+              onClick={handleGoogleLogin}
               className="w-full py-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium"
             >
               Googleでログイン
