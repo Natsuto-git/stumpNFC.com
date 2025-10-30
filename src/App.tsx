@@ -6,6 +6,7 @@ function App() {
   const [isReady, setIsReady] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isInClient, setIsInClient] = useState(false);
+  const [showManualOpen, setShowManualOpen] = useState(false);
   const [profileName, setProfileName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -68,6 +69,8 @@ function App() {
                   } else if (isAndroid) {
                     window.location.href = deepLink;
                   }
+                  // ここまで来ても画面が残っている=自動遷移がブロックされた
+                  setShowManualOpen(true);
                 }
               }, 1800);
             }
@@ -144,7 +147,17 @@ function App() {
         <h1 className="text-xl font-semibold">LINE ログイン</h1>
         {!isReady && <p className="text-gray-500">初期化中...</p>}
         {isReady && !isLoggedIn && (
-          <p className="text-gray-600 text-sm">ログインへ遷移しています…</p>
+          <div className="space-y-2">
+            <p className="text-gray-600 text-sm">ログインへ遷移しています…</p>
+            {showManualOpen && (
+              <a
+                href={`https://liff.line.me/${import.meta.env.VITE_LIFF_ID}`}
+                className="inline-block w-full py-3 rounded-md bg-green-500 hover:bg-green-600 text-white font-medium"
+              >
+                LINEアプリで開く（うまく遷移しない場合）
+              </a>
+            )}
+          </div>
         )}
         {isReady && isLoggedIn && (
           <div className="space-y-3">
