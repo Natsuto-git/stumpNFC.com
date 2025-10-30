@@ -12,11 +12,13 @@ function App() {
   const [profileName, setProfileName] = useState<string | null>(null);
   const oneTapTriedRef = useRef(false);
   const tokenClientRef = useRef<any>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
     if (!clientId) {
       console.error("VITE_GOOGLE_CLIENT_ID が未設定です");
+      setErrorMsg("VITE_GOOGLE_CLIENT_ID が未設定です");
       return;
     }
 
@@ -74,6 +76,7 @@ function App() {
         setIsReady(true);
       } catch (e) {
         console.error("Google Identity Services 初期化エラー", e);
+        setErrorMsg("Googleの初期化に失敗しました");
       }
     };
 
@@ -98,19 +101,30 @@ function App() {
 
   const handleGoogleLogin = () => {
     // One Tap を再提示（出ない場合はトークンフローにフォールバック）
+    setErrorMsg(null);
     let prompted = false;
     try {
       window.google?.accounts.id.prompt((notification: any) => {
         // NotDisplayed or Skipped ならフォールバック
         const reason = notification?.getNotDisplayedReason?.() || notification?.getSkippedReason?.();
         if (reason) {
-          tokenClientRef.current?.requestAccessToken({ prompt: "consent" });
+          try {
+            tokenClientRef.current?.requestAccessToken({ prompt: "consent" });
+          } catch (e) {
+            console.error("TokenClient 起動失敗", e);
+            setErrorMsg("ポップアップがブロックされました。ポップアップを許可してください。");
+          }
         }
       });
       prompted = true;
     } catch {}
     if (!prompted) {
-      tokenClientRef.current?.requestAccessToken({ prompt: "consent" });
+      try {
+        tokenClientRef.current?.requestAccessToken({ prompt: "consent" });
+      } catch (e) {
+        console.error("TokenClient 起動失敗", e);
+        setErrorMsg("ログイン画面を開けませんでした。ブラウザ設定をご確認ください。");
+      }
     }
   };
 
@@ -119,6 +133,7 @@ function App() {
       <div className="bg-white rounded-xl shadow p-6 w-full max-w-md text-center space-y-4">
         <h1 className="text-xl font-semibold">Google ログイン</h1>
         {!isReady && <p className="text-gray-500">初期化中...</p>}
+        {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
         {isReady && !isLoggedIn && (
           <div className="space-y-3">
             <div id="g_id_signin"></div>
