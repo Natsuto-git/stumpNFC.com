@@ -22,19 +22,23 @@ function App() {
         if (loggedIn) {
           const profile = await liff.getProfile();
           setProfileName(profile?.displayName ?? null);
+          sessionStorage.removeItem("AUTO_LOGIN_TRIED");
         } else {
-          // 自動ログイン（誰でもアクセス直後にログイン画面へ遷移）
-          const redirectUri = import.meta.env.VITE_LIFF_REDIRECT_URI || window.location.href;
-          liff.login({ redirectUri });
+          // 無限リロード防止: セッション内で一度だけ自動ログイン
+          const tried = sessionStorage.getItem("AUTO_LOGIN_TRIED") === "1";
+          if (!tried) {
+            sessionStorage.setItem("AUTO_LOGIN_TRIED", "1");
 
-          // さらに“LINEアプリで開く”を強制したい場合（アプリ外閲覧時）
-          const forceOpenInLine = (import.meta.env.VITE_FORCE_OPEN_IN_LINE || "false").toString() === "true";
-          const isInClient = typeof liff.isInClient === "function" ? liff.isInClient() : false;
-          if (forceOpenInLine && !isInClient) {
-            // LIFF URL に遷移すると LINE アプリが起動し、既ログインのアカウントでスムーズに認可されやすい
-            const liffUrl = `https://liff.line.me/${liffId}`;
-            // 認可後は LIFF 側設定のエンドポイントURLに戻る。必要ならクエリでヒントを付与
-            window.location.replace(liffUrl);
+            const forceOpenInLine = (import.meta.env.VITE_FORCE_OPEN_IN_LINE || "false").toString() === "true";
+            const isInClient = typeof liff.isInClient === "function" ? liff.isInClient() : false;
+
+            if (forceOpenInLine && !isInClient) {
+              const liffUrl = `https://liff.line.me/${liffId}`;
+              window.location.replace(liffUrl);
+            } else {
+              const redirectUri = import.meta.env.VITE_LIFF_REDIRECT_URI || window.location.href;
+              liff.login({ redirectUri });
+            }
           }
         }
       } catch (e) {
