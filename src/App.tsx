@@ -62,14 +62,21 @@ function App() {
     const liffId = import.meta.env.VITE_LIFF_ID as string | undefined;
     if (!liffId) return;
     const liffUrl = `https://liff.line.me/${liffId}`;
+    const deepLink = `line://app/${liffId}`;
     // iOS Safari での確実性向上のため、明示的に location.href で遷移
     window.location.href = liffUrl;
-    // 念のため、遷移できない環境向けのフォールバック
+    // 0.8s 後も可視なら失敗とみなし、assign で再試行
     setTimeout(() => {
       if (document.visibilityState === "visible") {
         window.location.assign(liffUrl);
       }
     }, 800);
+    // さらに 1.6s 後も遷移していない場合、スキームURLでフォールバック
+    setTimeout(() => {
+      if (document.visibilityState === "visible") {
+        window.location.href = deepLink;
+      }
+    }, 1600);
   };
 
   return (
