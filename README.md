@@ -10,6 +10,8 @@
 
 ```
 VITE_GOOGLE_CLIENT_ID=あなたのOAuthクライアントID.apps.googleusercontent.com
+# ログイン成功後に遷移するスタンプカードURL
+VITE_POST_LOGIN_URL=https://あなたのスタンプカードURL/
 ```
 
 4. 起動

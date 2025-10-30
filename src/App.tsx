@@ -32,6 +32,11 @@ function App() {
             const payload = JSON.parse(atob(credential.split(".")[1] || ""));
             setProfileName(payload?.name || null);
             setIsLoggedIn(true);
+            const postUrl = import.meta.env.VITE_POST_LOGIN_URL as string | undefined;
+            if (postUrl) {
+              // ログイン直後にスタンプカードへ遷移
+              window.location.replace(postUrl);
+            }
           },
           auto_select: false,
           cancel_on_tap_outside: true,
@@ -136,6 +141,14 @@ function App() {
         {isReady && isLoggedIn && (
           <div className="space-y-3">
             <p className="text-gray-700">ログイン中{profileName ? `：${profileName}` : ""}</p>
+            {import.meta.env.VITE_POST_LOGIN_URL && (
+              <a
+                href={import.meta.env.VITE_POST_LOGIN_URL as string}
+                className="inline-block w-full py-3 rounded-md bg-green-600 hover:bg-green-700 text-white font-medium"
+              >
+                スタンプカードへ進む
+              </a>
+            )}
             <button
               onClick={handleLogout}
               className="w-full py-3 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium"
