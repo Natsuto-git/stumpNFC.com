@@ -4,6 +4,10 @@
     { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
   ],
   "framework": null,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
   "env": {
     "VITE_LIFF_ID": "${VITE_LIFF_ID}",
     "VITE_LIFF_REDIRECT_URI": "${VITE_LIFF_REDIRECT_URI}"
