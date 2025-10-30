@@ -27,13 +27,50 @@ function App() {
           setProfileName(profile?.displayName ?? null);
           sessionStorage.removeItem("AUTO_LOGIN_TRIED");
         } else {
-          // ブラウザ（LINEアプリ外）では一度だけLIFF URLへ遷移してLINEアプリを起動
+          // セッション内で一度だけ自動処理
           const tried = sessionStorage.getItem("AUTO_LOGIN_TRIED") === "1";
-          const forceOpenInLine = (import.meta.env.VITE_FORCE_OPEN_IN_LINE || "true").toString() === "true";
-          if (!inClient && forceOpenInLine && !tried) {
+          if (!tried) {
             sessionStorage.setItem("AUTO_LOGIN_TRIED", "1");
-            const liffUrl = `https://liff.line.me/${liffId}`;
-            window.location.replace(liffUrl);
+
+            if (inClient) {
+              // LINEアプリ内は即ログイン（ワンタップ不要）
+              const redirectUri = import.meta.env.VITE_LIFF_REDIRECT_URI || window.location.href;
+              liff.login({ redirectUri });
+            } else {
+              // アプリ外は自動でアプリ起動（スキーム→LIFF→ストア/再試行）
+              const liffUrl = `https://liff.line.me/${liffId}`;
+              const deepLink = `line://app/${liffId}`;
+              const appStoreUrl = `https://apps.apple.com/app/id443904275`;
+              const ua = navigator.userAgent || "";
+              const isAndroid = /Android/i.test(ua);
+              const isIOS = /iPhone|iPad|iPod/i.test(ua);
+
+              try {
+                const iframe = document.createElement("iframe");
+                iframe.style.display = "none";
+                iframe.src = deepLink;
+                document.body.appendChild(iframe);
+                setTimeout(() => {
+                  try { document.body.removeChild(iframe); } catch {}
+                }, 1000);
+              } catch {}
+
+              setTimeout(() => {
+                if (document.visibilityState === "visible") {
+                  window.location.href = liffUrl;
+                }
+              }, 600);
+
+              setTimeout(() => {
+                if (document.visibilityState === "visible") {
+                  if (isIOS) {
+                    window.location.href = appStoreUrl;
+                  } else if (isAndroid) {
+                    window.location.href = deepLink;
+                  }
+                }
+              }, 1800);
+            }
           }
         }
       } catch (e) {
@@ -107,24 +144,7 @@ function App() {
         <h1 className="text-xl font-semibold">LINE ログイン</h1>
         {!isReady && <p className="text-gray-500">初期化中...</p>}
         {isReady && !isLoggedIn && (
-          isInClient ? (
-            <button
-              onClick={handleLogin}
-              className="w-full py-3 rounded-md bg-green-500 hover:bg-green-600 text-white font-medium"
-            >
-              LINEでログイン
-            </button>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-gray-600 text-sm">LINEアプリで開くとログインできます。</p>
-              <button
-                onClick={openInLineApp}
-                className="w-full py-3 rounded-md bg-green-500 hover:bg-green-600 text-white font-medium"
-              >
-                LINEアプリで開く
-              </button>
-            </div>
-          )
+          <p className="text-gray-600 text-sm">ログインへ遷移しています…</p>
         )}
         {isReady && isLoggedIn && (
           <div className="space-y-3">
