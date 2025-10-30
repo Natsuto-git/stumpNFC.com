@@ -63,20 +63,42 @@ function App() {
     if (!liffId) return;
     const liffUrl = `https://liff.line.me/${liffId}`;
     const deepLink = `line://app/${liffId}`;
-    // iOS Safari での確実性向上のため、明示的に location.href で遷移
-    window.location.href = liffUrl;
-    // 0.8s 後も可視なら失敗とみなし、assign で再試行
+    const appStoreUrl = `https://apps.apple.com/app/id443904275`; // LINE 公式
+    const ua = navigator.userAgent || "";
+    const isAndroid = /Android/i.test(ua);
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+
+    // 1) まずスキームで直接起動を試みる（ユーザー操作直後に実行）
+    //    iOSでは iframe 経由が比較的成功しやすいケースあり
+    try {
+      const iframe = document.createElement("iframe");
+      iframe.style.display = "none";
+      iframe.src = deepLink;
+      document.body.appendChild(iframe);
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+    } catch {}
+
+    // 2) 0.6s 後に https の LIFF URL を試す（Safariや一部環境で成功しやすい）
     setTimeout(() => {
       if (document.visibilityState === "visible") {
-        window.location.assign(liffUrl);
+        window.location.href = liffUrl;
       }
-    }, 800);
-    // さらに 1.6s 後も遷移していない場合、スキームURLでフォールバック
+    }, 600);
+
+    // 3) さらに 1.8s 後もアプリが前面にいない場合、
+    //    iOS は App Store、Android は再度 deepLink or intent を試行
     setTimeout(() => {
       if (document.visibilityState === "visible") {
-        window.location.href = deepLink;
+        if (isIOS) {
+          window.location.href = appStoreUrl;
+        } else if (isAndroid) {
+          // Android の一部ブラウザ向け再試行
+          window.location.href = deepLink;
+        }
       }
-    }, 1600);
+    }, 1800);
   };
 
   return (
