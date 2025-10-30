@@ -100,31 +100,18 @@ function App() {
   };
 
   const handleGoogleLogin = () => {
-    // One Tap を再提示（出ない場合はトークンフローにフォールバック）
+    // まず確実にトークンフローのポップアップを開く（Safari対策）
     setErrorMsg(null);
-    let prompted = false;
     try {
-      window.google?.accounts.id.prompt((notification: any) => {
-        // NotDisplayed or Skipped ならフォールバック
-        const reason = notification?.getNotDisplayedReason?.() || notification?.getSkippedReason?.();
-        if (reason) {
-          try {
-            tokenClientRef.current?.requestAccessToken({ prompt: "consent" });
-          } catch (e) {
-            console.error("TokenClient 起動失敗", e);
-            setErrorMsg("ポップアップがブロックされました。ポップアップを許可してください。");
-          }
-        }
-      });
-      prompted = true;
-    } catch {}
-    if (!prompted) {
+      if (!tokenClientRef.current) throw new Error("TokenClient 未初期化");
+      tokenClientRef.current.requestAccessToken({ prompt: "consent" });
+    } catch (e) {
+      console.error("TokenClient 起動失敗", e);
+      // フォールバックとして One Tap を提示
       try {
-        tokenClientRef.current?.requestAccessToken({ prompt: "consent" });
-      } catch (e) {
-        console.error("TokenClient 起動失敗", e);
-        setErrorMsg("ログイン画面を開けませんでした。ブラウザ設定をご確認ください。");
-      }
+        window.google?.accounts.id.prompt();
+      } catch {}
+      setErrorMsg("ポップアップがブロックされた可能性があります。許可して再試行してください。");
     }
   };
 
