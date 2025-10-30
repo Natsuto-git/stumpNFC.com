@@ -9,6 +9,8 @@
 VITE_LIFF_ID=あなたのLIFF_ID
 # 任意: リダイレクト先を固定したい場合に指定（未指定なら現URL）
 VITE_LIFF_REDIRECT_URI=https://あなたのドメイン/
+# 任意: LINEアプリ外で開いたとき、LIFF URLに自動遷移してLINEアプリを起動
+VITE_FORCE_OPEN_IN_LINE=true
 ```
 
 3. 開発/本番URLを LIFF のエンドポイントURLやコールバックURLに登録してください。
@@ -30,6 +32,9 @@ npm run dev
 - LIFF エンドポイントURLに、実際にアクセスするURL（本番/開発）を登録
 - 外部ブラウザからも開ける通常のウェブアプリ（LIFF v2）として設定
 - 必要に応じて `.env` に `VITE_LIFF_REDIRECT_URI` を指定
+- さらに“できるだけLINEアプリで開かせたい”場合は `VITE_FORCE_OPEN_IN_LINE=true` を設定
+  - ブラウザでアクセス→未ログイン→自動で `https://liff.line.me/<LIFF_ID>` に遷移→LINEアプリが起動
+  - 既にLINEアプリでログイン済みなら、アカウント選択なしでスムーズに進みやすい
 
 ## デプロイ（Vercel + GitHub Actions）
 
@@ -45,6 +50,9 @@ npm run dev
 4. mainにプッシュすると `.github/workflows/deploy-vercel.yml` が自動で本番デプロイ
 5. デプロイURLを LINE Developers のLIFF「エンドポイントURL」に登録
 
-補足: `vercel.json` は static build（Viteの `dist`）を公開する設定です。
+補足
+- `vercel.json` は static build（Viteの `dist`）を公開する設定です。
+- 本番は `.env.production` が自動で読み込まれます（`VITE_*` だけ公開可）。
+- もしVercelダッシュボードの環境変数を使う場合は、同じ値を設定すればOKです。
 
 stumpNFC.com

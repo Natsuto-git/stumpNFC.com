@@ -26,6 +26,16 @@ function App() {
           // 自動ログイン（誰でもアクセス直後にログイン画面へ遷移）
           const redirectUri = import.meta.env.VITE_LIFF_REDIRECT_URI || window.location.href;
           liff.login({ redirectUri });
+
+          // さらに“LINEアプリで開く”を強制したい場合（アプリ外閲覧時）
+          const forceOpenInLine = (import.meta.env.VITE_FORCE_OPEN_IN_LINE || "false").toString() === "true";
+          const isInClient = typeof liff.isInClient === "function" ? liff.isInClient() : false;
+          if (forceOpenInLine && !isInClient) {
+            // LIFF URL に遷移すると LINE アプリが起動し、既ログインのアカウントでスムーズに認可されやすい
+            const liffUrl = `https://liff.line.me/${liffId}`;
+            // 認可後は LIFF 側設定のエンドポイントURLに戻る。必要ならクエリでヒントを付与
+            window.location.replace(liffUrl);
+          }
         }
       } catch (e) {
         console.error("LIFF 初期化エラー", e);
