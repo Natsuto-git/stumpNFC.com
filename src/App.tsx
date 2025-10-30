@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import StampCard from "./components/StampCard";
 
 declare global {
   interface Window {
@@ -13,6 +14,13 @@ function App() {
   const oneTapTriedRef = useRef(false);
   const tokenClientRef = useRef<any>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [hash, setHash] = useState<string>(() => window.location.hash || "");
+
+  useEffect(() => {
+    const onHashChange = () => setHash(window.location.hash || "");
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
 
   useEffect(() => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
@@ -36,6 +44,9 @@ function App() {
             if (postUrl) {
               // ログイン直後にスタンプカードへ遷移
               window.location.replace(postUrl);
+            } else {
+              // 内部カード画面へ遷移（ハッシュルーティング）
+              window.location.hash = "/card";
             }
           },
           auto_select: false,
@@ -123,43 +134,73 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
       <div className="bg-white rounded-xl shadow p-6 w-full max-w-md text-center space-y-4">
-        <h1 className="text-xl font-semibold">Google ログイン</h1>
-        {!isReady && <p className="text-gray-500">初期化中...</p>}
-        {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
-        {isReady && !isLoggedIn && (
-          <div className="space-y-3">
-            <div id="g_id_signin"></div>
-            <button
-              onClick={handleGoogleLogin}
-              className="w-full py-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium"
-            >
-              Googleでログイン
-            </button>
-            <p className="text-xs text-gray-500">One Tapが表示されない場合はボタンを押してください。</p>
-          </div>
-        )}
-        {isReady && isLoggedIn && (
-          <div className="space-y-3">
-            <p className="text-gray-700">ログイン中{profileName ? `：${profileName}` : ""}</p>
-            {import.meta.env.VITE_POST_LOGIN_URL && (
-              <a
-                href={import.meta.env.VITE_POST_LOGIN_URL as string}
-                className="inline-block w-full py-3 rounded-md bg-green-600 hover:bg-green-700 text-white font-medium"
-              >
-                スタンプカードへ進む
-              </a>
+        {hash === "#/card" ? (
+          <div className="text-left space-y-4">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-semibold">スタンプカード</h1>
+              <a href="#/" className="text-sm text-blue-600 hover:underline">ホームへ</a>
+            </div>
+            {!isLoggedIn && (
+              <p className="text-sm text-red-600">ログインが必要です。ホームに戻ってログインしてください。</p>
             )}
-            <button
-              onClick={handleLogout}
-              className="w-full py-3 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium"
-            >
-              ログアウト
-            </button>
+            <StampCard userName={profileName} />
+            <div className="space-y-3">
+              <button
+                onClick={handleLogout}
+                className="w-full py-3 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium"
+              >
+                ログアウト
+              </button>
+            </div>
           </div>
+        ) : (
+          <>
+            <h1 className="text-xl font-semibold">Google ログイン</h1>
+            {!isReady && <p className="text-gray-500">初期化中...</p>}
+            {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
+            {isReady && !isLoggedIn && (
+              <div className="space-y-3">
+                <div id="g_id_signin"></div>
+                <button
+                  onClick={handleGoogleLogin}
+                  className="w-full py-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                >
+                  Googleでログイン
+                </button>
+                <p className="text-xs text-gray-500">One Tapが表示されない場合はボタンを押してください。</p>
+              </div>
+            )}
+            {isReady && isLoggedIn && (
+              <div className="space-y-3">
+                <p className="text-gray-700">ログイン中{profileName ? `：${profileName}` : ""}</p>
+                {import.meta.env.VITE_POST_LOGIN_URL ? (
+                  <a
+                    href={import.meta.env.VITE_POST_LOGIN_URL as string}
+                    className="inline-block w-full py-3 rounded-md bg-green-600 hover:bg-green-700 text-white font-medium"
+                  >
+                    スタンプカードへ進む
+                  </a>
+                ) : (
+                  <a
+                    href="#/card"
+                    className="inline-block w-full py-3 rounded-md bg-green-600 hover:bg-green-700 text-white font-medium"
+                  >
+                    スタンプカードへ進む
+                  </a>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="w-full py-3 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium"
+                >
+                  ログアウト
+                </button>
+              </div>
+            )}
+            <p className="text-xs text-gray-400">
+              設定: VITE_GOOGLE_CLIENT_ID を用意し、Google Cloud Consoleで承認済みドメインに本番/開発URLを登録してください。
+            </p>
+          </>
         )}
-        <p className="text-xs text-gray-400">
-          設定: VITE_GOOGLE_CLIENT_ID を用意し、Google Cloud Consoleで承認済みドメインに本番/開発URLを登録してください。
-        </p>
       </div>
     </div>
   );
