@@ -1,16 +1,8 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
-  ],
-  "framework": null,
-  "cleanUrls": true,
-  "routes": [
-    { "src": "/(.*)", "dest": "/index.html" }
-  ],
-  "env": {
-    "VITE_LIFF_ID": "${VITE_LIFF_ID}",
-    "VITE_LIFF_REDIRECT_URI": "${VITE_LIFF_REDIRECT_URI}"
-  }
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
 
