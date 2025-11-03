@@ -1,93 +1,27 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { getAuth, signInWithRedirect, getRedirectResult, OAuthProvider } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
-import { Button } from '@/components/ui/button';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 
 export default function Register() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // --- ▼ LINEログイン（リダイレクト）から戻ってきた時の処理 ▼ ---
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result) {
-          // ログイン成功！
-          const user = result.user;
-          console.log("LINEログイン成功（新規登録）:", user.uid);
-
-          // このユーザーが「新規」か「既存」かを確認
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDoc = await getDoc(userDocRef);
-
-          if (!userDoc.exists()) {
-            // --- ▼ 新規ユーザーの場合 ▼ ---
-            console.log("新規ユーザーです。DBに初期データを作成します。");
-            await setDoc(userDocRef, {
-              email: user.email || '',
-              displayName: user.displayName || 'ゲスト',
-              photoURL: user.photoURL || '',
-              stamps: 3,
-              maxStamps: 10,
-              totalStamps: 3,
-              coupons: [],
-              stampHistory: [],
-              completedCards: 0,
-              lastStampDate: undefined,
-              createdAt: new Date().toISOString()
-            });
-          } else {
-            // --- 既存ユーザーの場合（既にLINEログインで登録済み） ---
-            console.log("既存ユーザーです。");
-          }
-          
-          // 処理が完了したら、スタンプカード画面へ強制的に遷移
-          navigate('/card');
-
-        } else {
-          // リダイレクト結果がない場合（＝普通に登録ページを開いた場合）
-          setLoading(false);
-        }
-      })
-      .catch((error) => {
-        // エラー処理
-        console.error("LINEログインエラー:", error);
-        setError("ログインに失敗しました。もう一度お試しください。");
-        setLoading(false);
-      });
-  }, [navigate]);
-
-  // --- ▼ 「LINEで新規登録」ボタンが押された時の処理 ▼ ---
+  // LINEログインにリダイレクト（Login.tsxと同じ処理）
   const handleLineRegister = () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const provider = new OAuthProvider('line.me');
-      
-      // LINEの認証画面にリダイレクト
-      signInWithRedirect(auth, provider);
-    } catch (err: any) {
-      console.error("LINEログイン開始エラー:", err);
-      setError("LINEログインの開始に失敗しました。");
-      setLoading(false);
-    }
-  };
+    const channelId = import.meta.env.VITE_LINE_CHANNEL_ID || 'YOUR_CHANNEL_ID';
+    const callbackUrl = import.meta.env.VITE_LINE_CALLBACK_URL || 
+      `${window.location.origin}/login`;
+    const state = crypto.randomUUID();
 
-  // 読み込み中はスピナーを表示
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
-        <LoadingSpinner size="lg" text="読み込み中..." />
-      </div>
-    );
-  }
+    const lineAuthUrl = `https://access.line.me/oauth2/v2.1/authorize?` +
+      `response_type=code&` +
+      `client_id=${channelId}&` +
+      `redirect_uri=${encodeURIComponent(callbackUrl)}&` +
+      `state=${state}&` +
+      `scope=profile%20openid%20email`;
+
+    window.location.href = lineAuthUrl;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 flex items-center justify-center p-6">
@@ -98,19 +32,12 @@ export default function Register() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* LINEログインボタン */}
           <Button 
             onClick={handleLineRegister} 
             className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-6 text-lg"
           >
             LINEで新規登録
           </Button>
-
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
           
           <p className="text-xs text-stone-500 text-center">
             ボタンを押すだけで登録・ログインが完了します。

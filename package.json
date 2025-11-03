@@ -12,8 +12,12 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
+    "@vercel/node": "^5.5.3",
+    "axios": "^1.13.1",
+    "cors": "^2.8.5",
     "date-fns": "^4.1.0",
     "firebase": "^12.5.0",
+    "firebase-admin": "^13.5.0",
     "lucide-react": "^0.344.0",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
