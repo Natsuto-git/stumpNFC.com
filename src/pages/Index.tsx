@@ -18,14 +18,9 @@ export default function Index() {
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Link to="/register" className="block">
-            <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-6 text-lg">
-              新規会員登録
-            </Button>
-          </Link>
           <Link to="/login" className="block">
-            <Button variant="outline" className="w-full font-semibold py-6 text-lg">
-              ログイン
+            <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-6 text-lg">
+              LINEでログイン / 新規登録
             </Button>
           </Link>
           <div className="text-center text-sm text-gray-500 space-y-2">

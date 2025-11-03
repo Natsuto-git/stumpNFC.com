@@ -1,65 +1,93 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { getAuth, signInWithRedirect, getRedirectResult, OAuthProvider } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function Register() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  // --- ▼ LINEログイン（リダイレクト）から戻ってきた時の処理 ▼ ---
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result) {
+          // ログイン成功！
+          const user = result.user;
+          console.log("LINEログイン成功（新規登録）:", user.uid);
 
-    if (!email || !password) {
-      setError('メールとパスワードを入力してください。');
-      setLoading(false);
-      return;
-    }
+          // このユーザーが「新規」か「既存」かを確認
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
 
-    try {
-      // Firebaseで新規アカウント作成
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+          if (!userDoc.exists()) {
+            // --- ▼ 新規ユーザーの場合 ▼ ---
+            console.log("新規ユーザーです。DBに初期データを作成します。");
+            await setDoc(userDocRef, {
+              email: user.email || '',
+              displayName: user.displayName || 'ゲスト',
+              photoURL: user.photoURL || '',
+              stamps: 3,
+              maxStamps: 10,
+              totalStamps: 3,
+              coupons: [],
+              stampHistory: [],
+              completedCards: 0,
+              lastStampDate: undefined,
+              createdAt: new Date().toISOString()
+            });
+          } else {
+            // --- 既存ユーザーの場合（既にLINEログインで登録済み） ---
+            console.log("既存ユーザーです。");
+          }
+          
+          // 処理が完了したら、スタンプカード画面へ強制的に遷移
+          navigate('/card');
 
-      // ユーザー専用のスタンプカードデータをFirestoreに作成
-      await setDoc(doc(db, 'users', user.uid), {
-        email: user.email,
-        stampCount: 0,
-        maxStamps: 10,
-        coupons: [],
-        totalStamps: 0,
-        lastStampDate: null,
-        createdAt: new Date().toISOString()
+        } else {
+          // リダイレクト結果がない場合（＝普通に登録ページを開いた場合）
+          setLoading(false);
+        }
+      })
+      .catch((error) => {
+        // エラー処理
+        console.error("LINEログインエラー:", error);
+        setError("ログインに失敗しました。もう一度お試しください。");
+        setLoading(false);
       });
+  }, [navigate]);
 
-      // 登録成功、スタンプカード画面に遷移
-      navigate('/card');
-    } catch (error: any) {
-      console.error('登録エラー:', error);
-      if (error.code === 'auth/email-already-in-use') {
-        setError('そのメールアドレスは既に使用されています。');
-      } else if (error.code === 'auth/weak-password') {
-        setError('パスワードは6文字以上にしてください。');
-      } else if (error.code === 'auth/invalid-email') {
-        setError('メールアドレスの形式が正しくありません。');
-      } else {
-        setError('登録に失敗しました。');
-      }
-    } finally {
+  // --- ▼ 「LINEで新規登録」ボタンが押された時の処理 ▼ ---
+  const handleLineRegister = () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const provider = new OAuthProvider('line.me');
+      
+      // LINEの認証画面にリダイレクト
+      signInWithRedirect(auth, provider);
+    } catch (err: any) {
+      console.error("LINEログイン開始エラー:", err);
+      setError("LINEログインの開始に失敗しました。");
       setLoading(false);
     }
   };
+
+  // 読み込み中はスピナーを表示
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
+        <LoadingSpinner size="lg" text="読み込み中..." />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 flex items-center justify-center p-6">
@@ -69,44 +97,25 @@ export default function Register() {
             新規会員登録
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleRegister} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">メールアドレス</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="メールアドレス"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">パスワード</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="パスワード"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-6 text-lg"
-              disabled={loading}
-            >
-              {loading ? '登録中...' : '登録する'}
-            </Button>
-          </form>
+        <CardContent className="space-y-4">
+          {/* LINEログインボタン */}
+          <Button 
+            onClick={handleLineRegister} 
+            className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-6 text-lg"
+          >
+            LINEで新規登録
+          </Button>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
+          <p className="text-xs text-stone-500 text-center">
+            ボタンを押すだけで登録・ログインが完了します。
+          </p>
+
           <div className="mt-4 text-center text-sm text-gray-600">
             <p>
               既にアカウントをお持ちの方は{' '}
