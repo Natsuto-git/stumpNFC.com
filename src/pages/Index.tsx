@@ -1,159 +1,43 @@
-import { useEffect, useRef, useState } from "react";
-
-declare global {
-  interface Window {
-    google?: any;
-  }
-}
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function Index() {
-  const [isReady, setIsReady] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [profileName, setProfileName] = useState<string | null>(null);
-  const oneTapTriedRef = useRef(false);
-  const tokenClientRef = useRef<any>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
-    if (!clientId) {
-      console.error("VITE_GOOGLE_CLIENT_ID が未設定です");
-      setErrorMsg("VITE_GOOGLE_CLIENT_ID が未設定です");
-      return;
-    }
-
-    const init = () => {
-      try {
-        window.google.accounts.id.initialize({
-          client_id: clientId,
-          callback: (response: any) => {
-            const credential = response?.credential;
-            if (!credential) return;
-            const payload = JSON.parse(atob(credential.split(".")[1] || ""));
-            setProfileName(payload?.name || null);
-            setIsLoggedIn(true);
-            // 新スタンプカードアプリへ遷移
-            window.location.assign('/card');
-          },
-          auto_select: false,
-          cancel_on_tap_outside: true,
-        });
-
-        tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
-          client_id: clientId,
-          scope: "openid email profile",
-          callback: async (tokenResponse: any) => {
-            try {
-              const accessToken = tokenResponse?.access_token;
-              if (!accessToken) return;
-              const res = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
-                headers: { Authorization: `Bearer ${accessToken}` },
-              });
-              const user = await res.json();
-              setProfileName(user?.name || user?.email || null);
-              setIsLoggedIn(true);
-            } catch (e) {
-              console.error("userinfo 取得失敗", e);
-            }
-          },
-        });
-
-        const target = document.getElementById("g_id_signin");
-        if (target) {
-          window.google.accounts.id.renderButton(target, {
-            theme: "outline",
-            size: "large",
-            width: 320,
-            shape: "rectangular",
-          });
-        }
-
-        if (!oneTapTriedRef.current) {
-          oneTapTriedRef.current = true;
-          window.google.accounts.id.prompt();
-        }
-
-        setIsReady(true);
-      } catch (e) {
-        console.error("Google Identity Services 初期化エラー", e);
-        setErrorMsg("Googleの初期化に失敗しました");
-      }
-    };
-
-    if (window.google?.accounts?.id) {
-      init();
-    } else {
-      const timer = setInterval(() => {
-        if (window.google?.accounts?.id) {
-          clearInterval(timer);
-          init();
-        }
-      }, 100);
-      setTimeout(() => clearInterval(timer), 10000);
-    }
-  }, []);
-
-  const handleLogout = () => {
-    window.google?.accounts.id.disableAutoSelect();
-    setIsLoggedIn(false);
-    setProfileName(null);
-  };
-
-  const handleGoogleLogin = () => {
-    setErrorMsg(null);
-    try {
-      if (!tokenClientRef.current) throw new Error("TokenClient 未初期化");
-      tokenClientRef.current.requestAccessToken({ prompt: "consent" });
-    } catch (e) {
-      console.error("TokenClient 起動失敗", e);
-      try {
-        window.google?.accounts.id.prompt();
-      } catch {}
-      setErrorMsg("ポップアップがブロックされた可能性があります。許可して再試行してください。");
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
-      <div className="bg-white rounded-xl shadow p-6 w-full max-w-md text-center space-y-4">
-        <h1 className="text-xl font-semibold">Google ログイン</h1>
-        {!isReady && <p className="text-gray-500">初期化中...</p>}
-        {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
-        {isReady && !isLoggedIn && (
-          <div className="space-y-3">
-            <div id="g_id_signin"></div>
-            <button
-              onClick={handleGoogleLogin}
-              className="w-full py-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium"
-            >
-              Googleでログイン
-            </button>
-            <p className="text-xs text-gray-500">One Tapが表示されない場合はボタンを押してください。</p>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 flex items-center justify-center p-6">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-white text-3xl">🍜</span>
           </div>
-        )}
-        {isReady && isLoggedIn && (
-          <div className="space-y-3">
-            <p className="text-gray-700">ログイン中{profileName ? `：${profileName}` : ""}</p>
-            <a
-              href="/card"
-              className="inline-block w-full py-3 rounded-md bg-green-600 hover:bg-green-700 text-white font-medium"
-            >
-              スタンプカードへ進む
-            </a>
-            <button
-              onClick={handleLogout}
-              className="w-full py-3 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium"
-            >
-              ログアウト
-            </button>
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+            スタンプカードアプリ
+          </CardTitle>
+          <p className="text-gray-600 mt-2">
+            10個のスタンプを集めて<br />お得なクーポンをゲットしよう！
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Link to="/register" className="block">
+            <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-6 text-lg">
+              新規会員登録
+            </Button>
+          </Link>
+          <Link to="/login" className="block">
+            <Button variant="outline" className="w-full font-semibold py-6 text-lg">
+              ログイン
+            </Button>
+          </Link>
+          <div className="text-center text-sm text-gray-500 space-y-2">
+            <Link to="/card" className="text-orange-600 hover:underline block">
+              ゲストとしてスタンプカードを見る
+            </Link>
+            <Link to="/admin" className="text-gray-500 hover:underline block">
+              オーナー管理画面
+            </Link>
           </div>
-        )}
-        <p className="text-xs text-gray-400">
-          設定: VITE_GOOGLE_CLIENT_ID を用意し、Google Cloud Consoleで承認済みドメインに本番/開発URLを登録してください。
-        </p>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
-
-

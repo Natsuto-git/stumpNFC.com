@@ -9,6 +9,8 @@ interface MobileStampCardProps {
   progress: number;
   isAuthenticated: boolean;
   canAddStampToday: boolean;
+  totalStampsEarned: number;
+  storeName?: string;
 }
 
 export const MobileStampCard = ({
@@ -17,60 +19,71 @@ export const MobileStampCard = ({
   progress,
   isAuthenticated,
   canAddStampToday,
+  totalStampsEarned,
+  storeName = '〇〇店',
 }: MobileStampCardProps) => {
   return (
-    <Card className="w-full max-w-sm mx-auto bg-gradient-to-br from-orange-50 to-red-50 border-2 border-orange-200 shadow-xl">
+    <Card className="w-full max-w-lg mx-auto border-2 border-amber-800/60 shadow-lg relative" style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)' }}>
       <CardHeader className="text-center pb-3">
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center">
-            <span className="text-white text-xl">🍜</span>
+        <div className="mb-3">
+          <p className="text-xl font-bold text-stone-800">ようこそ{storeName}へ！</p>
+        </div>
+        {isAuthenticated && (
+          <div className="flex items-center justify-center gap-2">
+            <Badge className="bg-green-500 hover:bg-green-600 text-xs">ログイン中</Badge>
           </div>
-          <CardTitle className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-            スタンプカード
-          </CardTitle>
-        </div>
-        <div className="flex items-center justify-center gap-2">
-          <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm">
-            {stamps} / {maxStamps}
-          </Badge>
-          {isAuthenticated && <Badge className="bg-green-500 hover:bg-green-600 text-xs">ログイン中</Badge>}
-        </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4 pb-6">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm font-medium text-gray-600">
-            <span>進捗</span>
-            <span>{Math.round(progress)}%</span>
-          </div>
-          <Progress value={progress} className="h-2 bg-gray-200" />
-        </div>
-        <div className="grid grid-cols-5 gap-2 justify-items-center py-4">
-          {Array.from({ length: maxStamps }, (_, index) => (
-            <StampSlot key={index} filled={index < stamps} index={index} animationDelay={index * 50} size="small" />
+            <div className="space-y-2">
+              <div className="flex justify-end text-sm font-medium text-stone-700">
+                <span>{Math.round(progress)}%</span>
+              </div>
+              <Progress 
+                value={progress} 
+                className="h-2" 
+                style={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.4)',
+                }}
+              />
+            </div>
+        <div className="grid grid-cols-5 gap-x-3 gap-y-8 justify-items-center py-6">
+          {Array.from({ length: 10 }, (_, index) => (
+            <div key={index} data-stamp-slot>
+              <StampSlot 
+                filled={index < stamps && index < maxStamps} 
+                index={index} 
+                animationDelay={index * 50} 
+                size="medium" 
+              />
+            </div>
           ))}
         </div>
-        <div className="text-center p-3 bg-white/60 rounded-lg border border-orange-200">
-          {!isAuthenticated ? (
-            <p className="text-gray-600 text-sm">QRコードでログインして<br />スタンプを獲得しましょう</p>
-          ) : !canAddStampToday ? (
-            <p className="text-orange-600 font-medium text-sm">
-              本日のスタンプは獲得済みです<br />
-              <span className="text-xs text-gray-500">また明日お越しください</span>
-            </p>
-          ) : stamps === maxStamps ? (
-            <p className="text-green-600 font-semibold animate-pulse">🎉 クーポン獲得！</p>
-          ) : (
-            <div className="space-y-1">
-              <p className="text-gray-700 font-medium text-sm">スタンプ獲得可能！</p>
-              <p className="text-gray-600 text-xs">あと {maxStamps - stamps} 個でクーポンゲット</p>
+        <div className="text-center p-4 rounded-lg border-2 border-amber-800/50" style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)' }}>
+          <div className="space-y-2">
+            <div>
+              <p className="text-xs text-stone-600 mb-1">累計スタンプ数</p>
+              <p className="text-2xl font-bold text-stone-800">{totalStampsEarned}</p>
             </div>
-          )}
+            {!canAddStampToday && (
+              <p className="text-stone-700 font-medium text-sm">
+                本日のスタンプは獲得済みです<br />
+                <span className="text-xs text-stone-600">また明日お越しください</span>
+              </p>
+            )}
+            {canAddStampToday && stamps === maxStamps && (
+              <p className="text-stone-700 font-semibold">クーポン獲得！</p>
+            )}
+            {canAddStampToday && stamps < maxStamps && (
+              <p className="text-stone-600 text-xs">あと {maxStamps - stamps} 個でクーポンゲット</p>
+            )}
+          </div>
         </div>
         {isAuthenticated && (
           <div className="flex justify-center">
             <Badge
               variant="outline"
-              className={`text-xs ${canAddStampToday ? 'border-green-300 text-green-700' : 'border-gray-300 text-gray-500'}`}
+              className={`text-xs ${canAddStampToday ? 'border-stone-400 text-stone-700' : 'border-stone-300 text-stone-600'}`}
             >
               今日: {canAddStampToday ? '未獲得' : '獲得済み'}
             </Badge>

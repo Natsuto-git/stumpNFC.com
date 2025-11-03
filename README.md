@@ -3,9 +3,15 @@
 ## Googleログイン設定（Google Identity Services）
 
 1. Google Cloud Console で OAuth 同意画面を作成 → 公開
-2. 認証情報 → 「OAuth 2.0 クライアントID（Web）」作成
-   - 承認済みのJavaScript生成元: `http://localhost:5173`, `https://<本番ドメイン>`
-   - リダイレクトURIは不要（One Tap / Credential 回収方式）
+   - **アプリ名**: エラー画面に表示される名前（任意・変更不要でも可）
+   - 公開ステータスを「テスト」から「本番」に変更して公開
+2. 認証情報 → 「OAuth 2.0 クライアントID（Web）」作成/編集
+   - **承認済みのJavaScript生成元**に以下を追加（完全一致のURLが必要）:
+     - `https://stump-nfc-mqkes7gju-natsutos-projects.vercel.app`
+     - `https://stump-nfc-com.vercel.app`（プロダクションドメインがある場合）
+     - `http://localhost:5173`（ローカル開発用）
+   - **リダイレクトURIは不要**（One Tap / Credential 回収方式を使用）
+   - ⚠️ **重要**: `redirect_uri_mismatch` エラーが出る場合は、生成元URLが正確に一致しているか確認してください
 3. プロジェクト直下に `.env` を作成し、以下を設定
 
 ```

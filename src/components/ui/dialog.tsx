@@ -1,5 +1,5 @@
 import { HTMLAttributes, PropsWithChildren } from 'react';
-import { cn } from '../../../lib/utils';
+import { cn } from '@/lib/utils';
 
 type DialogProps = PropsWithChildren<{ open: boolean; onOpenChange?: (open: boolean) => void }>;
 export function Dialog({ open, children }: DialogProps) {
@@ -30,6 +30,14 @@ export function DialogHeader({ className = '', ...props }: HTMLAttributes<HTMLDi
 
 export function DialogTitle({ className = '', ...props }: HTMLAttributes<HTMLHeadingElement>) {
   return <h3 className={cn('text-lg font-semibold', className)} {...props} />;
+}
+
+export function DialogDescription({ className = '', ...props }: HTMLAttributes<HTMLParagraphElement>) {
+  return <p className={cn('text-sm text-gray-600', className)} {...props} />;
+}
+
+export function DialogFooter({ className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn('mt-4 flex gap-2', className)} {...props} />;
 }
 
 export default Dialog;
